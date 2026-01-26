@@ -20,15 +20,14 @@ app.add_middleware(
 
 # Load your models safely
 try:
-    best_pipe = joblib.load("best_pipe.pkl")
-    best_pipe_withGL = joblib.load("best_pipe_withGL.pkl")
-    best_pipe_lifestyle = joblib.load("best_pipe_lifestyle.pkl")
-    best_pipe_lifestyle_randomForest = joblib.load("best_pipe_lifestyle_randomForest.pkl")
+    clinical_pipe = joblib.load("final_pipe/clinical_pipe.pkl")
+    lifestyle_pipe = joblib.load("final_pipe/lifestyle_pipe.pkl")
     print("✅ Models loaded successfully.")
 except Exception as e:
     print("❌ Error loading models:", e)
     traceback.print_exc()
-    best_pipe = None
+    clinical_pipe = None
+    lifestyle_pipe = None
     best_pipe_lifestyle = None
 
 
@@ -39,9 +38,9 @@ def root():
 
 # Define input schema
 class UserFeatures(BaseModel):
+    username: str
     age: int
     gender: int
-    knowbgl: int
     height: float
     weight: float
     waist: float
@@ -82,33 +81,25 @@ def predict(data: UserFeatures):
     prob_lifestyle = 0
     featuresClinical = None
     featuresClinicalwithoutGL = None
+    print("Received data for prediction:", data.model_dump())
+    
     try: 
-        if data.knowbgl == 1:
-            featuresClinical = pd.DataFrame([{
-                "Age": data.age,
-                "Gender": data.gender,
-                "Height_cm": data.height,
-                "Weight_kg": data.weight,
-                "Waist_cm": data.waist,
-                "Hip_cm": data.hip,
-                "Systolic_BP": data.systolic,
-                "Diastolic_BP": data.diastolic,
-                "HbA1c": data.hba1c * 1.2,
-                "FBS": data.fbs,
-                "HDL": data.hdl,
-                "Cholesterol_Total": data.cholesterol
-            }])
-        elif data.knowbgl == 0:
-            featuresClinicalwithoutGL = pd.DataFrame([{
-                "Age": data.age,
-                "Gender": data.gender,
-                "Height_cm": data.height,
-                "Weight_kg": data.weight,
-                "Waist_cm": data.waist,
-                "Hip_cm": data.hip,
-                "Systolic_BP": data.systolic,
-                "Diastolic_BP": data.diastolic,
-            }])
+     
+        featuresClinical = pd.DataFrame([{
+            "Age": data.age,
+            "Gender": data.gender,
+            "Height_cm": data.height,
+            "Weight_kg": data.weight,
+            "Waist_cm": data.waist,
+            "Hip_cm": data.hip,
+            "Systolic_BP": data.systolic,
+            "Diastolic_BP": data.diastolic,
+            "HbA1c": data.hba1c,
+            "FBS": data.fbs,
+            "HDL": data.hdl,
+            "Cholesterol_Total": data.cholesterol
+        }])
+
         
         if (data.doesExercise == 2):
             featuresLifestyle = pd.DataFrame([{
@@ -122,8 +113,8 @@ def predict(data: UserFeatures):
             "fried_food_freq_ord": data.fried,
             "lose_weight_ord": data.weight_concern,
             "exercise_yes_ord": data.doesExercise,
-            "exercise_freq_ord": 1,
-            "exercise_duration_ord": 1,
+            "exercise_freq_ord": data.exercise_times,
+            "exercise_duration_ord": data.exercise_duration,
             "sedentary_hours_ord": data.sitting,
             "activity_level_ord": data.main_activity,
             "transpo_ord": data.mode_of_transpo,
@@ -163,20 +154,18 @@ def predict(data: UserFeatures):
         }])
 
         
-        if(data.knowbgl == 1):
-            prob_clinical = best_pipe_withGL.predict_proba(featuresClinical)[0][1]
-            prob_lifestyle = best_pipe_lifestyle_randomForest.predict_proba(featuresLifestyle)[0][1]
-        else:
-            prob_clinical = best_pipe.predict_proba(featuresClinicalwithoutGL)[0][1]
-            prob_lifestyle = best_pipe_lifestyle_randomForest.predict_proba(featuresLifestyle)[0][1]
+        
+        prob_clinical = clinical_pipe.predict_proba(featuresClinical)[0][1]
+        prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
 
-        prob_combined = (prob_clinical * 0.5) + (prob_lifestyle * 0.5)
+        prob_combined = (prob_clinical * 0.6) + (prob_lifestyle * 0.4)
         prob_percent = round(prob_combined * 100, 2)
 
+        print(f"Prediction successful: Clinical Prob={prob_clinical * 100}, Lifestyle Prob={prob_lifestyle*100}, Combined Prob={prob_combined}, Percent={prob_percent}% ")
         return {
             #"prediction": int(prediction),
             #"probability": round(float(prob_combined) * 100, 2),
-            "clinical":prob_clinical*100, "lifestyle": prob_lifestyle*100, "combined_percent": prob_percent, "clinical_data": featuresClinical.to_dict(orient="records"), "lifestyle_data": featuresLifestyle.to_dict(orient="records")
+            "clinical":prob_clinical, "lifestyle": prob_lifestyle, "combined": prob_combined, "percent": prob_percent
         }
 
     except Exception as e:
