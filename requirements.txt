@@ -6,4 +6,3 @@ imbalanced-learn
 numpy
 pandas
 xgboost
-sklearn.linear_model
