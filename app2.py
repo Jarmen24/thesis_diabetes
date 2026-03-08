@@ -21,7 +21,7 @@ app.add_middleware(
 # Load your models safely
 try:
     clinical_pipe = joblib.load("final_pipe/clinical_pipe.pkl")
-    clinical_pipe_withoutGL = joblib.load("final_pipe/clinical_pipe_withoutGL.pkl")
+    clinical_pipe_withoutGL = joblib.load("final_pipe/clinical_nogc.pkl")
     lifestyle_pipe = joblib.load("final_pipe/lifestyle_reduced.pkl")
     print("✅ Models loaded successfully.")
 except Exception as e:
