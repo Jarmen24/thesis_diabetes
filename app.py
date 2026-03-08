@@ -21,7 +21,8 @@ app.add_middleware(
 # Load your models safely
 try:
     clinical_pipe = joblib.load("final_pipe/clinical_pipe.pkl")
-    lifestyle_pipe = joblib.load("final_pipe/lifestyle_pipe.pkl")
+    clinical_pipe_withoutGL = joblib.load("final_pipe/clinical_nogc.pkl")
+    lifestyle_pipe = joblib.load("final_pipe/lifestyle_reduced.pkl")
     print("✅ Models loaded successfully.")
 except Exception as e:
     print("❌ Error loading models:", e)
@@ -157,6 +158,87 @@ def predict(data: UserFeatures):
         
         prob_clinical = clinical_pipe.predict_proba(featuresClinical)[0][1]
         prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
+
+        prob_combined = (prob_clinical * 0.6) + (prob_lifestyle * 0.4)
+        prob_percent = round(prob_combined * 100, 2)
+
+        print(f"Prediction successful: Clinical Prob={prob_clinical * 100}, Lifestyle Prob={prob_lifestyle*100}, Combined Prob={prob_combined}, Percent={prob_percent}% ")
+        return {
+            #"prediction": int(prediction),
+            #"probability": round(float(prob_combined) * 100, 2),
+            "clinical":prob_clinical, "lifestyle": prob_lifestyle, "combined": prob_combined, "percent": prob_percent
+        }
+
+    except Exception as e:
+        print("❌ Error in /predict:", e)
+        traceback.print_exc()
+        print("Received data:",data.model_dump())
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "trace": traceback.format_exc(), "data": data.model_dump()},
+        )
+
+@app.post("/predict2")
+def predict(data: UserFeatures):
+    prob_clinical = 0
+    prob_lifestyle = 0
+    featuresClinical = None
+    featuresClinicalwithoutGL = None
+    print("Received data for prediction:", data.model_dump())
+    
+    try: 
+        if (data.knowbgl == 1):
+            featuresClinical = pd.DataFrame([{
+                "Age": data.age,
+                "Gender": data.gender,
+                "Height_cm": data.height,
+                "Weight_kg": data.weight,
+                "Waist_cm": data.waist,
+                "Hip_cm": data.hip,
+                "Systolic_BP": data.systolic,
+                "Diastolic_BP": data.diastolic,
+                "HbA1c": data.hba1c,
+                "FBS": data.fbs,
+                "HDL": data.hdl,
+                "Cholesterol_Total": data.cholesterol
+            }])
+            
+        if (data.knowbgl == 0):
+            featuresClinical = pd.DataFrame([{
+                "Age": data.age,
+                "Gender": data.gender,
+                "Height_cm": data.height,
+                "Weight_kg": data.weight,
+                "Waist_cm": data.waist,
+                "Hip_cm": data.hip,
+                "Systolic_BP": data.systolic,
+                "Diastolic_BP": data.diastolic,
+            }])
+
+  
+        featuresLifestyle = pd.DataFrame([{
+            "alcohol_ord": data.sleep_alcohol,
+            "veg_freq_ord": data.vegetables,
+            "sweets_freq_ord": data.sweets,
+            "processed_freq_ord": data.processed,
+            "lose_weight_ord": data.weight_concern,
+            "exercise_duration_ord": data.exercise_duration,
+            "sedentary_hours_ord": data.sitting,
+            "transpo_ord": data.mode_of_transpo,
+            "father_diab_ord": data.fh_father,
+            "mother_diab_ord": data.fh_mother,
+            "sister_diab_ord": data.fh_sister,
+            "brother_diab_ord": data.fh_brother,
+            "extended_diab_ord": data.fh_extended,
+        }])
+
+        
+        if (data.knowbgl == 1):
+            prob_clinical = clinical_pipe.predict_proba(featuresClinical)[0][1]
+            prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
+        else:
+            prob_clinical = clinical_pipe_withoutGL.predict_proba(featuresClinical)[0][1]
+            prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
 
         prob_combined = (prob_clinical * 0.6) + (prob_lifestyle * 0.4)
         prob_percent = round(prob_combined * 100, 2)
