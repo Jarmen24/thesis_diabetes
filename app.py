@@ -6,7 +6,7 @@ import traceback
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import traceback
-
+from typing import Optional
 # Initialize the FastAPI app
 app = FastAPI(title="Diabetes Prediction API")
 
@@ -23,6 +23,7 @@ try:
     clinical_pipe = joblib.load("final_pipe/clinical_pipe.pkl")
     clinical_pipe_withoutGL = joblib.load("final_pipe/clinical_nogc.pkl")
     lifestyle_pipe = joblib.load("final_pipe/lifestyle_reduced.pkl")
+    lifestyle_reduced_pipe = joblib.load("final_pipe/lifestyle_reduced.pkl")
     print("✅ Models loaded successfully.")
 except Exception as e:
     print("❌ Error loading models:", e)
@@ -48,22 +49,26 @@ class UserFeatures(BaseModel):
     hip: float
     systolic: int
     diastolic: int
-    hba1c: float
-    fbs: float
-    cholesterol: float
-    hdl: float
-    fruits: int
-    vegetables: int
-    fried: int
+
     knowbgl: int
+
+    # optional clinical glucose fields
+    hba1c: Optional[float] = None
+    fbs: Optional[float] = None
+    cholesterol: Optional[float] = None
+    hdl: Optional[float] = None
+
+    fruits: Optional[float] = None
+    vegetables: int
+    fried: Optional[float] = None
     sweets: int
-    fastfood: int
-    processed: int
-    softdrink: int
+    fastfood: Optional[float] = None
+    processed: Optional[float] = None
+    softdrink: Optional[float] = None
     weight_concern: int
     doesExercise: int
-    exercise_times: int
-    exercise_duration: int
+    exercise_times: Optional[float] = None
+    exercise_duration: Optional[float] = None
     sitting: int
     main_activity: int
     mode_of_transpo: int
@@ -239,7 +244,7 @@ def predict(data: UserFeatures):
             prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
         else:
             prob_clinical = clinical_pipe_withoutGL.predict_proba(featuresClinical)[0][1]
-            prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
+            prob_lifestyle = lifestyle_reduced_pipe.predict_proba(featuresLifestyle)[0][1]
 
         prob_combined = (prob_clinical * 0.6) + (prob_lifestyle * 0.4)
         prob_percent = round(prob_combined * 100, 2)
