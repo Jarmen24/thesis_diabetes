@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import traceback
 
+from typing import Optional
+
 # Initialize the FastAPI app
 app = FastAPI(title="Diabetes Prediction API")
 
@@ -48,22 +50,26 @@ class UserFeatures(BaseModel):
     hip: float
     systolic: int
     diastolic: int
-    hba1c: float
-    fbs: float
-    cholesterol: float
-    hdl: float
-    fruits: int
-    vegetables: int
-    fried: int
-    sweets: int
-    fastfood: int
+
     knowbgl: int
-    processed: int
-    softdrink: int
+
+    # optional clinical glucose fields
+    hba1c: Optional[float] = None
+    fbs: Optional[float] = None
+    cholesterol: Optional[float] = None
+    hdl: Optional[float] = None
+
+    fruits: Optional[float] = None
+    vegetables: int
+    fried: Optional[float] = None
+    sweets: int
+    fastfood: Optional[float] = None
+    processed: Optional[float] = None
+    softdrink: Optional[float] = None
     weight_concern: int
     doesExercise: int
-    exercise_times: int
-    exercise_duration: int
+    exercise_times: Optional[float] = None
+    exercise_duration: Optional[float] = None
     sitting: int
     main_activity: int
     mode_of_transpo: int
