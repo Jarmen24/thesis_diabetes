@@ -55,6 +55,7 @@ class UserFeatures(BaseModel):
     fruits: int
     vegetables: int
     fried: int
+    knowbgl: int
     sweets: int
     fastfood: int
     processed: int
