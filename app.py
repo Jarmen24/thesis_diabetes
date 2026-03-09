@@ -228,6 +228,7 @@ def predict(data: UserFeatures):
             "sweets_freq_ord": data.sweets,
             "processed_freq_ord": data.processed,
             "lose_weight_ord": data.weight_concern,
+            "exercise_yes_ord": data.doesExercise,
             "exercise_duration_ord": data.exercise_duration,
             "sedentary_hours_ord": data.sitting,
             "transpo_ord": data.mode_of_transpo,
