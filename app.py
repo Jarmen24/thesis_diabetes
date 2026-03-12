@@ -81,7 +81,7 @@ class UserFeatures(BaseModel):
     sleep_hours: Optional[float] = None
     sleep_cigarette: Optional[float] = None
     sleep_alcohol: int
-    any_fanily_diabetes: int
+    any_family_diabetes: int
 
 
 @app.post("/predict")
@@ -239,7 +239,7 @@ def predict(data: UserFeatures):
             "sister_diab_ord": data.fh_sister,
             "brother_diab_ord": data.fh_brother,
             "extended_diab_ord": data.fh_extended,
-            "any_family_diabetes": data.any_fanily_diabetes
+            "any_family_diabetes": data.any_family_diabetes
         }])
 
         
