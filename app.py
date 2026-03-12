@@ -24,6 +24,7 @@ try:
     clinical_pipe_withoutGL = joblib.load("final_pipe/clinical_nogc.pkl")
     lifestyle_pipe = joblib.load("final_pipe/lifestyle_reduced.pkl")
     lifestyle_reduced_pipe = joblib.load("final_pipe/lifestyle_reduced.pkl")
+    lifestyle_reduced_pipe_withnewcolumn = joblib.load("final_pipe/lifestyle_reduced_withnewcolumn.pkl")
     print("✅ Models loaded successfully.")
 except Exception as e:
     print("❌ Error loading models:", e)
@@ -70,16 +71,17 @@ class UserFeatures(BaseModel):
     exercise_times: Optional[float] = None
     exercise_duration: Optional[float] = None
     sitting: int
-    main_activity: int
+    main_activity: Optional[float] = None
     mode_of_transpo: int
-    fh_father: int
-    fh_mother: int
-    fh_sister: int
-    fh_brother: int
-    fh_extended: int
-    sleep_hours: int
-    sleep_cigarette: int
+    fh_father: Optional[float] = None
+    fh_mother: Optional[float] = None
+    fh_sister: Optional[float] = None
+    fh_brother: Optional[float] = None
+    fh_extended: Optional[float] = None
+    sleep_hours: Optional[float] = None
+    sleep_cigarette: Optional[float] = None
     sleep_alcohol: int
+    any_fanily_diabetes: int
 
 
 @app.post("/predict")
@@ -237,6 +239,7 @@ def predict(data: UserFeatures):
             "sister_diab_ord": data.fh_sister,
             "brother_diab_ord": data.fh_brother,
             "extended_diab_ord": data.fh_extended,
+            "any_family_diabetes": data.any_fanily_diabetes
         }])
 
         
@@ -245,7 +248,7 @@ def predict(data: UserFeatures):
             prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
         else:
             prob_clinical = clinical_pipe_withoutGL.predict_proba(featuresClinical)[0][1]
-            prob_lifestyle = lifestyle_reduced_pipe.predict_proba(featuresLifestyle)[0][1]
+            prob_lifestyle = lifestyle_reduced_pipe_withnewcolumn.predict_proba(featuresLifestyle)[0][1]
 
         prob_combined = (prob_clinical * 0.6) + (prob_lifestyle * 0.4)
         prob_percent = round(prob_combined * 100, 2)
