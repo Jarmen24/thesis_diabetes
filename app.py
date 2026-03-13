@@ -268,3 +268,5 @@ def predict(data: UserFeatures):
             status_code=500,
             content={"error": str(e), "trace": traceback.format_exc(), "data": data.model_dump()},
         )
+
+
