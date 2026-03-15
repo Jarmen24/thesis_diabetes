@@ -234,18 +234,13 @@ def predict(data: UserFeatures):
             "exercise_duration_ord": data.exercise_duration,
             "sedentary_hours_ord": data.sitting,
             "transpo_ord": data.mode_of_transpo,
-            "father_diab_ord": data.fh_father,
-            "mother_diab_ord": data.fh_mother,
-            "sister_diab_ord": data.fh_sister,
-            "brother_diab_ord": data.fh_brother,
-            "extended_diab_ord": data.fh_extended,
             "any_family_diabetes": data.any_family_diabetes
         }])
 
         
         if (data.knowbgl == 1):
             prob_clinical = clinical_pipe.predict_proba(featuresClinical)[0][1]
-            prob_lifestyle = lifestyle_pipe.predict_proba(featuresLifestyle)[0][1]
+            prob_lifestyle = lifestyle_reduced_pipe_withnewcolumn.predict_proba(featuresLifestyle)[0][1]
         else:
             prob_clinical = clinical_pipe_withoutGL.predict_proba(featuresClinical)[0][1]
             prob_lifestyle = lifestyle_reduced_pipe_withnewcolumn.predict_proba(featuresLifestyle)[0][1]
